@@ -1,0 +1,4 @@
+UI/UX Guidelines:
+1. All error messages must be displayed in red text.
+2. The 'Pay Now' button must be green (#008000) with white text.
+3. Upon successful payment, the form should hide, and a "Payment Successful!" message should appear.

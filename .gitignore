@@ -1,0 +1,17 @@
+# Ignore Virtual Environment (Too huge)
+venv/
+.venv/
+
+# Ignore Environment Variables (Security Risk!)
+.env
+
+# Ignore Python Cache
+__pycache__/
+*.pyc
+
+# Ignore Local Database (Users should rebuild this themselves)
+vector_db/
+temp_uploads/
+
+# Ignore VS Code settings
+.vscode/

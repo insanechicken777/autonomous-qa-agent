@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>E-Shop Checkout</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; background-color: #f9f9f9; }
+        h1, h3 { color: #333; }
+        .section { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .error { color: red; font-size: 0.9em; }
+        .hidden { display: none; }
+        .product, .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        button { padding: 8px 15px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-add { background-color: #007bff; color: white; }
+        .btn-apply { background-color: #6c757d; color: white; }
+        .btn-pay { background-color: #28a745; color: white; font-size: 1.2em; width: 100%; padding: 15px; margin-top: 10px; }
+        input[type="text"], input[type="email"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛍️ E-Shop Checkout</h1>
+
+    <!-- FEATURE 1: 2-3 Items with Add to Cart Buttons -->
+    <!-- FEATURE 1: 2-3 Items with Add to Cart Buttons -->
+    <div class="section">
+        <h3>Available Products</h3>
+        <div class="product">
+            <span>Wireless Headphones ($150)</span>
+            <!-- Added ID below -->
+            <button id="btn-add-headphones" class="btn-add" onclick="addToCart('headphones')">Add to Cart</button>
+        </div>
+        <div class="product">
+            <span>Mechanical Keyboard ($100)</span>
+            <!-- Added ID below -->
+            <button id="btn-add-keyboard" class="btn-add" onclick="addToCart('keyboard')">Add to Cart</button>
+        </div>
+    </div>
+
+    <!-- FEATURE 2: Cart Summary with Quantity Inputs -->
+    <div class="section" id="cart-summary">
+        <h3>Your Cart</h3>
+        <div class="cart-item">
+            <span>Headphones ($150)</span>
+            <input type="number" id="qty-headphones" value="0" min="0" onchange="calculateTotal()">
+        </div>
+        <div class="cart-item">
+            <span>Keyboard ($100)</span>
+            <input type="number" id="qty-keyboard" value="0" min="0" onchange="calculateTotal()">
+        </div>
+        <h3 style="text-align: right;">Total: $<span id="total-price">150.00</span></h3>
+    </div>
+
+    <!-- FEATURE 3: Discount Code Input -->
+    <div class="section">
+        <label>Discount Code:</label>
+        <input type="text" id="discount-code" placeholder="e.g. SAVE15">
+        <button class="btn-apply" id="apply-coupon-btn">Apply</button>
+        <p id="coupon-message" style="font-weight: bold; margin-top: 5px;"></p>
+    </div>
+
+    <!-- FEATURE 4, 5, 6, 7: Form, Validation, Shipping, Payment -->
+    <form id="checkout-form" class="section">
+        <h3>User Details</h3>
+        <div style="margin-bottom: 10px;">
+            <label>Full Name:</label><br>
+            <input type="text" id="fullname" style="width: 100%;">
+            <div id="error-name" class="error hidden">Name is required</div>
+        </div>
+        
+        <div style="margin-bottom: 10px;">
+            <label>Email:</label><br>
+            <input type="email" id="email" style="width: 100%;">
+            <div id="error-email" class="error hidden">Invalid email format</div>
+        </div>
+
+        <h3>Shipping Method</h3>
+        <label><input type="radio" name="shipping" value="standard" checked onchange="calculateTotal()"> Standard (Free)</label><br>
+        <label><input type="radio" name="shipping" value="express" onchange="calculateTotal()"> Express ($10)</label>
+
+        <h3>Payment Method</h3>
+        <label><input type="radio" name="payment" value="cc"> Credit Card</label><br>
+        <label><input type="radio" name="payment" value="paypal"> PayPal</label>
+
+        <!-- FEATURE 8: Pay Now Button -->
+        <br><br>
+        <button type="submit" id="pay-now-btn" class="btn-pay">Pay Now</button>
+    </form>
+
+    <div id="success-msg" class="section hidden" style="background-color: #d4edda; color: #155724; text-align: center;">
+        <h2>Payment Successful!</h2>
+        <p>Thank you for your order.</p>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const PRICES = { headphones: 150, keyboard: 100 };
+        let currentDiscount = 0;
+        let isFreeShippingActive = false; // <--- NEW FLAG
+
+        // 1. ADD TO CART LOGIC
+        function addToCart(item) {
+            const input = document.getElementById(`qty-${item}`);
+            input.value = parseInt(input.value) + 1;
+            calculateTotal();
+        }
+
+        // 2. CALCULATE TOTAL LOGIC
+        function calculateTotal() {
+            const q1 = parseInt(document.getElementById('qty-headphones').value) || 0;
+            const q2 = parseInt(document.getElementById('qty-keyboard').value) || 0;
+            
+            let subtotal = (q1 * PRICES.headphones) + (q2 * PRICES.keyboard);
+
+            // Shipping
+            let shippingCost = 0;
+            const isExpress = document.querySelector('input[name="shipping"][value="express"]').checked;
+            
+            if (isExpress) {
+                shippingCost = 10;
+                if (subtotal > 200) shippingCost = 0; 
+            }
+
+            // --- FIX: APPLY FREE SHIPPING LOGIC ---
+            if (isFreeShippingActive) {
+                shippingCost = 0;
+            }
+
+            // Discount
+            let discountAmount = subtotal * currentDiscount;
+            let total = subtotal - discountAmount + shippingCost;
+            if(total < 0) total = 0;
+
+            document.getElementById('total-price').innerText = total.toFixed(2);
+        }
+
+        // 3. COUPON LOGIC
+        document.getElementById('apply-coupon-btn').addEventListener('click', function() {
+            const code = document.getElementById('discount-code').value.trim().toUpperCase();
+            const msg = document.getElementById('coupon-message');
+            
+            // Reset states
+            currentDiscount = 0;
+            isFreeShippingActive = false;
+
+            if (code === 'SAVE15') {
+                currentDiscount = 0.15;
+                msg.innerText = "15% Discount Applied!";
+                msg.style.color = "green";
+            } else if (code === 'FREESHIP') {
+                isFreeShippingActive = true; // <--- ACTIVATE LOGIC
+                msg.innerText = "Free Shipping Applied!";
+                msg.style.color = "green";
+            } else {
+                msg.innerText = "Invalid Coupon";
+                msg.style.color = "red";
+            }
+            calculateTotal();
+        });
+
+        // 4. FORM VALIDATION & SUBMIT
+        document.getElementById('checkout-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            let isValid = true;
+            const name = document.getElementById('fullname').value.trim();
+            if (!name) {
+                document.getElementById('error-name').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('error-name').classList.add('hidden');
+            }
+            const email = document.getElementById('email').value.trim();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                document.getElementById('error-email').classList.remove('hidden');
+                isValid = false;
+            } else {
+                document.getElementById('error-email').classList.add('hidden');
+            }
+            if (isValid) {
+                document.getElementById('checkout-form').style.display = 'none';
+                document.getElementById('cart-summary').style.display = 'none';
+                document.getElementById('success-msg').classList.remove('hidden');
+            }
+        });
+
+        // Initial Calc
+        calculateTotal();
+    </script>
+</body>
+</html>
